@@ -53,70 +53,58 @@ func main() {
 	println(score, timeEnd)
 }
 
-type Tuple struct {
-	item  byte
-	quant int
-	group int
-}
-
 func processGroup(group []string, score *int, sem chan int, wg *sync.WaitGroup) {
 	defer wg.Done()
-	relation := getRuneRelation(group)
-	transformedRelation := transform(relation)
-	mostOccurred := findMostOccurrency(transformedRelation)
-	scoreForMostOccurred := calcCharScore(rune(mostOccurred.item))
+	uniques := make([]string, len(group))
+	for _, str := range group {
+		strUniq := getUniques(str)
+		uniques = append(uniques, strUniq)
+	}
+	groupMerged := mergeStrings(uniques)
+	threeOccRune := threeOccurrencesRune(groupMerged)
+	runeScore := calcCharScore(threeOccRune)
 	sem <- 1
-	*score += scoreForMostOccurred
+	*score += runeScore
 	<-sem
 }
 
-func getRuneRelation(group []string) map[byte]*Tuple {
-	strMap := make(map[byte]*Tuple)
-
-	for g := 0; g < len(group); g++ {
-		for c := 0; c < len(group[g]); c++ {
-			r := group[g][c]
-			item, exists := strMap[r]
-
-			if exists {
-				if item.group != g {
-					copy := strMap[r]
-					copy.quant++
-					copy.group = g
-					strMap[r] = copy
-				}
-			} else {
-				strMap[r] = &Tuple{item: r, quant: 1, group: g}
-			}
+func threeOccurrencesRune(str string) rune {
+	set := stringToRuneSet(str)
+	for run, app := range set {
+		if app == 3 {
+			return run
 		}
 	}
-
-	return strMap
+	return 0
 }
 
-func transform(input map[byte]*Tuple) []*Tuple {
-	arr := []*Tuple{}
-	for _, v := range input {
-		arr = append(arr, v)
+func mergeStrings(arr []string) string {
+	res := ""
+	for _, str := range arr {
+		res += str
 	}
-	return arr
+	return res
 }
 
-type TupleValue struct {
-	item  byte
-	quant int
+func getUniques(str string) string {
+	set := stringToRuneSet(str)
+	res := ""
+	for key := range set {
+		res += string(key)
+	}
+	return res
 }
 
-func findMostOccurrency(occurrencies []*Tuple) *Tuple {
-	maxIdx := 0
-
-	for i, n := range occurrencies {
-		if n.quant > occurrencies[maxIdx].quant {
-			maxIdx = i
+func stringToRuneSet(str string) map[rune]int {
+	set := make(map[rune]int)
+	for _, char := range str {
+		if _, exists := set[char]; exists {
+			set[char]++
+		} else {
+			set[char] = 1
 		}
 	}
-
-	return occurrencies[maxIdx]
+	return set
 }
 
 func calcCharScore(c rune) int {
