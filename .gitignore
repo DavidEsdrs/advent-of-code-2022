@@ -1,1 +1,4 @@
 private
+test/
+go.mod
+output
