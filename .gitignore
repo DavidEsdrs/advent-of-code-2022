@@ -3,3 +3,4 @@ test/
 go.mod
 output
 utils
+test*
